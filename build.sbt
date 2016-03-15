@@ -9,8 +9,10 @@ lazy val jsProjects = Seq[ProjectReference](
   genJS, coreJS, scalapropsJS, scalazlawsJS
 )
 
-lazy val genJS = gen.js
-lazy val genJVM = gen.jvm
+lazy val scalazSnapshotURI = uri("git://github.com/scalaz/scalaz#8abb8154a19591cbecde550c7a7dfade2b5ccc27")
+
+lazy val genJS = gen.js.dependsOn(ProjectRef(scalazSnapshotURI, "coreJS"))
+lazy val genJVM = gen.jvm.dependsOn(ProjectRef(scalazSnapshotURI, "coreJVM"))
 lazy val genRoot = project.aggregate(genJS, genJVM)
 
 lazy val coreJS = core.js

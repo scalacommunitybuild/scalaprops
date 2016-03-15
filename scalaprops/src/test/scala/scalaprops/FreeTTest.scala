@@ -11,7 +11,7 @@ object FreeTTest extends Scalaprops {
     new Equal[FreeT[S, M, A]] {
       def equal(a: FreeT[S, M, A], b: FreeT[S, M, A]) = {
         implicit val s = Eq1[S].eq1(freeTEqual[S, M, A])
-        Eq1[M].eq1[A \/ S[FreeT[S, M, A]]].equal(a.resume, b.resume)
+        Eq1[M].eq1[S[FreeT[S, M, A]] \/ A].equal(a.resume, b.resume)
       }
     }
 
