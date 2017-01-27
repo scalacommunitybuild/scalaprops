@@ -109,14 +109,29 @@ object CofreeTest extends Scalaprops {
     )
   }
 
-  private[this] object CofreeGenImplicit {
+  object CofreeGenImplicit {
     implicit def gen[F[_], A](implicit
       F: Gen1[F],
       A: Gen[A]
-    ): Gen[Cofree[F, A]] =
-      Apply[Gen].apply2(A, F.gen1[Cofree[F, A]])((h, t) =>
+    ): Gen[Cofree[F, A]] = {
+      lazy val g1 = {
+        val g0 = F.gen1[Cofree[F, A]]
+        Gen.gen[F[Cofree[F, A]]]{(size, rand) =>
+          if(size > 0) {
+            val (r, s) = rand.choose(0, 2) match {
+              case (r0, 0) => (r0, size)
+              case (r0, _) => (r0, size - 1)
+            }
+            g0.f(s, r)
+          } else {
+            g0.f(size, rand)
+          }
+        }
+      }
+      Apply[Gen].apply2(A, g1)((h, t) =>
         Cofree(h, t)
       )
+    }
 
     implicit def genCofreeZip[F[_], A](implicit
       F: Gen1[F],
