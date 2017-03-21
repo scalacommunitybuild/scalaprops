@@ -1,7 +1,6 @@
 language: scala
 
 scala:
-  - 2.10.6
   - 2.11.8
 
 cache:
@@ -10,7 +9,6 @@ cache:
     - $HOME/.sbt/launchers
 
 jdk:
-  - oraclejdk7
   - oraclejdk8
 
 sudo: false
@@ -24,7 +22,7 @@ script:
   - git config core.whitespace tab-in-indent,trailing-space,space-before-tab,cr-at-eol
   - git show --oneline --check
   - wget https://raw.githubusercontent.com/paulp/sbt-extras/b9c8cb27/sbt && chmod +x ./sbt
-  - ./sbt ++${TRAVIS_SCALA_VERSION} checkGenerateCodeError compile test:compile scalapropsTestNames scalapropsJS/test scalapropsJVM/test "project /" publishLocal $(if [[ "${TRAVIS_PULL_REQUEST}" == "false" && ${JAVA_HOME} == $(jdk_switcher home oraclejdk8) && "${TRAVIS_BRANCH}" == "master" ]]; then echo "publish"; fi)
+  - ./sbt ++${TRAVIS_SCALA_VERSION} checkGenerateCodeError rootJVM/test:compile rootJS/test:compile
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" | xargs rm
   - find $HOME/.ivy2/cache -name "*SNAPSHOT*" | xargs rm -rf
   - if [[ ${JAVA_HOME} == $(jdk_switcher home oraclejdk8) ]]; then rm -rf $HOME/.ivy2/cache ; fi
@@ -36,25 +34,15 @@ env:
 
 matrix:
   include:
-    - scala: 2.12.1
-      jdk: oraclejdk8
-
-    - dist: trusty
-      group: edge
-      sudo: required
-      scala: 2.12.1
-      jdk: oraclejdk9
-      script:
-      # https://github.com/sbt/sbt/pull/2951
-      - git clone https://github.com/retronym/java9-rt-export
-      - cd java9-rt-export/
-      - git checkout 1019a2873d057dd7214f4135e84283695728395d
-      - jdk_switcher use oraclejdk8
-      - sbt package
-      - jdk_switcher use oraclejdk9
-      - mkdir -p $HOME/.sbt/0.13/java9-rt-ext; java -jar target/java9-rt-export-*.jar $HOME/.sbt/0.13/java9-rt-ext/rt.jar
-      - jar tf $HOME/.sbt/0.13/java9-rt-ext/rt.jar | grep java/lang/Object
-      - cd ..
-      - echo "sbt.version=0.13.14-RC1" > project/build.properties
-      - wget https://raw.githubusercontent.com/paulp/sbt-extras/9ade5fa54914ca8aded44105bf4b9a60966f3ccd/sbt && chmod +x ./sbt
-      - ./sbt -Dscala.ext.dirs=$HOME/.sbt/0.13/java9-rt-ext ++$TRAVIS_SCALA_VERSION scalapropsJVM/test scalapropsJS/test
+  - sudo: required
+    jdk: oraclejdk8
+    before_install:
+    - sudo apt-get -qq update
+    - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.7 main' >> /etc/apt/sources.list"
+    - sudo sh -c "echo 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise main' >> /etc/apt/sources.list"
+    - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
+    - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libgc-dev clang++-3.7 llvm-3.7 llvm-3.7-dev llvm-3.7-runtime llvm-3.7-tool libunwind7-dev
+    script:
+    - sbt ";rootNative/compile;show genNative/nativeMissingDependencies;show coreNative/nativeMissingDependencies;show scalazlawsNative/nativeMissingDependencies;show scalapropsNative/nativeMissingDependencies;nativeTest/run"
