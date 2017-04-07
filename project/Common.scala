@@ -28,6 +28,7 @@ object Common {
   val commonSettings = scalaprops.ScalapropsPlugin.autoImport.scalapropsCoreSettings ++ Seq(
     unmanagedResources in Compile += (baseDirectory in LocalRootProject).value / "LICENSE.txt",
     resolvers += Opts.resolver.sonatypeReleases,
+    resolvers += "Pre-release of Scala 2.11.10" at "https://oss.sonatype.org/content/repositories/orgscala-lang-1398",
     scalaVersion := Scala211,
     crossScalaVersions := "2.12.1" :: Scala211 :: "2.10.6" :: Nil,
     organization := "com.github.scalaprops",
